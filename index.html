@@ -56,7 +56,7 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px;
   }
-  .gallery a { display: block; }
+  .gallery a { display: block; cursor: zoom-in; }
   .gallery img {
     width: 100%;
     height: 150px;
@@ -68,6 +68,60 @@
   .status-text { color: #777; font-style: italic; }
   .error-text { color: #a33; }
   footer { margin-top: 32px; font-size: 0.85rem; color: #888; }
+
+  /* ---- Lightbox (full-photo overlay, no popup/new-tab involved) ---- */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 56px 16px;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox-img {
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 44px;
+    line-height: 1;
+    color: #fff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 12px;
+  }
+  .lightbox-close:hover { color: #bbb; }
+  .lightbox-prev, .lightbox-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    color: #fff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 18px;
+  }
+  .lightbox-prev:hover, .lightbox-next:hover { color: #bbb; }
+  .lightbox-prev { left: 0; }
+  .lightbox-next { right: 0; }
+  .lightbox-caption {
+    position: absolute;
+    bottom: 14px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #ddd;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
 <body>
@@ -144,8 +198,18 @@
 </details>
 
 <footer>
-  Updated on September 27, 2026..
+  Updated on September 27, 2026...
 </footer>
+
+<!-- Full-photo overlay. This is a plain in-page element, not a new browser
+     window/tab, so it can never be blocked by a popup blocker. -->
+<div id="lightbox" class="lightbox" hidden>
+  <button type="button" class="lightbox-close" aria-label="Close">&times;</button>
+  <button type="button" class="lightbox-prev" aria-label="Previous photo">&#8249;</button>
+  <button type="button" class="lightbox-next" aria-label="Next photo">&#8250;</button>
+  <img class="lightbox-img" alt="">
+  <div class="lightbox-caption"></div>
+</div>
 
 <script>
 // ======================= EDIT THESE THREE LINES =======================
@@ -191,6 +255,67 @@ function showErrorOnAll(sections, status) {
   });
 }
 
+/* ---------------- Lightbox ---------------- */
+const lightboxEl = document.getElementById("lightbox");
+const lightboxImgEl = lightboxEl.querySelector(".lightbox-img");
+const lightboxCaptionEl = lightboxEl.querySelector(".lightbox-caption");
+const lightboxPrevEl = lightboxEl.querySelector(".lightbox-prev");
+const lightboxNextEl = lightboxEl.querySelector(".lightbox-next");
+const lightboxCloseEl = lightboxEl.querySelector(".lightbox-close");
+
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function updateLightbox() {
+  const item = lightboxImages[lightboxIndex];
+  lightboxImgEl.src = item.url;
+  lightboxImgEl.alt = item.name;
+  lightboxCaptionEl.textContent = item.name + " (" + (lightboxIndex + 1) + " of " + lightboxImages.length + ")";
+  const multi = lightboxImages.length > 1;
+  lightboxPrevEl.style.visibility = multi ? "visible" : "hidden";
+  lightboxNextEl.style.visibility = multi ? "visible" : "hidden";
+}
+
+function openLightbox(images, index) {
+  lightboxImages = images;
+  lightboxIndex = index;
+  updateLightbox();
+  lightboxEl.hidden = false;
+  document.body.style.overflow = "hidden";
+  lightboxCloseEl.focus();
+}
+
+function closeLightbox() {
+  lightboxEl.hidden = true;
+  lightboxImgEl.src = "";
+  document.body.style.overflow = "";
+}
+
+function showPrev() {
+  lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
+  updateLightbox();
+}
+
+function showNext() {
+  lightboxIndex = (lightboxIndex + 1) % lightboxImages.length;
+  updateLightbox();
+}
+
+lightboxCloseEl.addEventListener("click", closeLightbox);
+lightboxPrevEl.addEventListener("click", showPrev);
+lightboxNextEl.addEventListener("click", showNext);
+// Click anywhere on the dark backdrop (not the photo itself) closes it
+lightboxEl.addEventListener("click", function (e) {
+  if (e.target === lightboxEl) closeLightbox();
+});
+document.addEventListener("keydown", function (e) {
+  if (lightboxEl.hidden) return;
+  if (e.key === "Escape") closeLightbox();
+  if (e.key === "ArrowLeft") showPrev();
+  if (e.key === "ArrowRight") showNext();
+});
+
+/* ---------------- Gallery population ---------------- */
 function populateSection(section, tree) {
   const folder = section.getAttribute("data-folder");
   const galleryEl = section.querySelector('[data-role="gallery"]');
@@ -216,17 +341,26 @@ function populateSection(section, tree) {
   if (images.length === 0) {
     galleryEl.innerHTML = '<span class="status-text">No photos in this folder yet.</span>';
   } else {
+    const imageData = images.map(function (img) {
+      return {
+        name: img.path.slice(prefix.length),
+        url: rawUrlFor(img.path) + "?v=" + Date.now()
+      };
+    });
+
     galleryEl.innerHTML = "";
-    images.forEach(function (img) {
-      const name = img.path.slice(prefix.length);
-      const url = rawUrlFor(img.path) + "?v=" + Date.now();
+    imageData.forEach(function (item, idx) {
       const a = document.createElement("a");
-      a.href = url;
+      a.href = item.url; // kept so right-click "open image in new tab" still works
       a.target = "_blank";
       a.rel = "noopener";
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        openLightbox(imageData, idx);
+      });
       const el = document.createElement("img");
-      el.src = url;
-      el.alt = name;
+      el.src = item.url;
+      el.alt = item.name;
       el.loading = "lazy";
       a.appendChild(el);
       galleryEl.appendChild(a);
