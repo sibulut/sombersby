@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Property Damage Photo Documentation</title>
+
+<!-- Keep this page out of Google/Bing etc. It's still reachable by anyone with the link. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+
+<!-- Ask the browser not to show a cached copy of this page -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<style>
+  :root { color-scheme: light; }
+  body {
+    background: #ffffff;
+    color: #222;
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 64px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .intro { color: #444; margin-top: 0; }
+  details {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    padding: 0;
+  }
+  summary {
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+  .content { padding: 4px 16px 18px; }
+  .damage-summary {
+    background: #f7f7f7;
+    border-left: 4px solid #999;
+    padding: 10px 14px;
+    margin: 8px 0 14px;
+  }
+  .invoice { margin: 0 0 14px; font-size: 0.95rem; }
+  .invoice a { color: #1a5fb4; }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  .gallery a { display: block; }
+  .gallery img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: block;
+  }
+  .status-text { color: #777; font-style: italic; }
+  .error-text { color: #a33; }
+  footer { margin-top: 32px; font-size: 0.85rem; color: #888; }
+</style>
+</head>
+<body>
+
+<h1>Property Damage Photo Documentation</h1>
+<p class="intro">
+  <!-- EDIT ME: short intro describing the property/address and move-out date if you want -->
+  Photos below document damage found at the property beyond normal use and normal wear and tear.
+</p>
+
+<!-- ================= Category 1 ================= -->
+<details data-folder="1) Broken Window Glass" open>
+  <summary>1) Broken Window Glass</summary>
+  <div class="content">
+    <p class="damage-summary">
+      <!-- EDIT ME -->
+      Second floor small bedroom window found broken from inside. Notice the blood stain on the window frame in one of the photos.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
+
+<!-- ================= Category 2 ================= -->
+<details data-folder="2) Damage to Garage Door">
+  <summary>2) Damage to Garage Door</summary>
+  <div class="content">
+    <p class="damage-summary">
+      <!-- EDIT ME -->
+      Describe the garage door damage here.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
+
+<!-- ================= Category 3 ================= -->
+<details data-folder="3) Wall &amp; Flooring Damage">
+  <summary>3) Wall &amp; Flooring Damage</summary>
+  <div class="content">
+    <p class="damage-summary">
+      <!-- EDIT ME -->
+      Describe the wall and flooring damage here.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
+
+<!-- ================= Category 4 ================= -->
+<details data-folder="4) Damages on Several Doors">
+  <summary>4) Damages on Several Doors</summary>
+  <div class="content">
+    <p class="damage-summary">
+      <!-- EDIT ME -->
+      Describe the door damage here.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
+
+<!-- ================= Category 5 ================= -->
+<details data-folder="5) Removal &amp; Cleaning">
+  <summary>5) Removal &amp; Cleaning</summary>
+  <div class="content">
+    <p class="damage-summary">
+      <!-- EDIT ME -->
+      Describe removal/cleaning costs here.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
+
+<footer>
+  Photos and invoices load directly from this repository each time the page opens, so adding or removing files in a folder updates this page automatically &mdash; no code changes needed.
+</footer>
+
+<script>
+// ======================= EDIT THESE THREE LINES =======================
+const CONFIG = {
+  owner: "YOUR-GITHUB-USERNAME",   // e.g. "sadikb"
+  repo:  "YOUR-REPO-NAME",         // e.g. "rental-damage-photos"
+  branch: "main"                   // change to "master" if that's your repo's default branch
+};
+// =======================================================================
+
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i;
+const PDF_EXT = /\.pdf$/i;
+
+// Force a real reload from the server instead of the browser's back/forward cache
+window.addEventListener("pageshow", function (event) {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
+
+function apiUrlForFolder(folder) {
+  const encodedPath = folder.split("/").map(encodeURIComponent).join("/");
+  return "https://api.github.com/repos/" + CONFIG.owner + "/" + CONFIG.repo +
+         "/contents/" + encodedPath + "?ref=" + encodeURIComponent(CONFIG.branch) +
+         "&_=" + Date.now();
+}
+
+async function loadFolder(section) {
+  const folder = section.getAttribute("data-folder");
+  const galleryEl = section.querySelector('[data-role="gallery"]');
+  const invoiceEl = section.querySelector('[data-role="invoice"]');
+
+  try {
+    const res = await fetch(apiUrlForFolder(folder), { cache: "no-store" });
+
+    if (!res.ok) {
+      let msg = "Could not load this folder (HTTP " + res.status + ").";
+      if (res.status === 403) msg += " GitHub's public API rate limit may have been reached — try again in a few minutes.";
+      if (res.status === 404) msg += " Check that the folder name and CONFIG.owner/repo/branch at the bottom of this file are correct.";
+      galleryEl.innerHTML = '<span class="error-text">' + msg + "</span>";
+      invoiceEl.textContent = "Invoice/receipt: unavailable.";
+      return;
+    }
+
+    const items = await res.json();
+    if (!Array.isArray(items)) {
+      galleryEl.innerHTML = '<span class="error-text">Unexpected response for this folder.</span>';
+      return;
+    }
+
+    const images = items
+      .filter(function (f) { return f.type === "file" && IMAGE_EXT.test(f.name); })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); });
+
+    const pdfs = items
+      .filter(function (f) { return f.type === "file" && PDF_EXT.test(f.name); })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); });
+
+    // Photo gallery
+    if (images.length === 0) {
+      galleryEl.innerHTML = '<span class="status-text">No photos in this folder yet.</span>';
+    } else {
+      galleryEl.innerHTML = "";
+      images.forEach(function (img) {
+        const bust = (img.download_url.indexOf("?") === -1 ? "?" : "&") + "v=" + Date.now();
+        const a = document.createElement("a");
+        a.href = img.download_url + bust;
+        a.target = "_blank";
+        a.rel = "noopener";
+        const el = document.createElement("img");
+        el.src = img.download_url + bust;
+        el.alt = img.name;
+        el.loading = "lazy";
+        a.appendChild(el);
+        galleryEl.appendChild(a);
+      });
+    }
+
+    // Invoice / receipt placeholder
+    if (pdfs.length === 0) {
+      invoiceEl.textContent = "Invoice/receipt: not yet added.";
+    } else {
+      invoiceEl.innerHTML = "Invoice/receipt: " + pdfs.map(function (p) {
+        return '<a href="' + p.download_url + '" target="_blank" rel="noopener">' + p.name + "</a>";
+      }).join(", ");
+    }
+  } catch (err) {
+    galleryEl.innerHTML = '<span class="error-text">Could not load photos (network error).</span>';
+    invoiceEl.textContent = "Invoice/receipt: unavailable.";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("details[data-folder]").forEach(loadFolder);
+});
+</script>
+
+</body>
+</html>
