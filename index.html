@@ -83,7 +83,6 @@
   <summary>1) Broken Window Glass</summary>
   <div class="content">
     <p class="damage-summary">
-      <!-- EDIT ME -->
       Second-floor small bedroom window found broken from the inside. A blood stain is visible on the window frame in one of the photos. An estimate has been received for glass replacement.
     </p>
     <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
@@ -96,7 +95,6 @@
   <summary>2) Damage to Garage Door</summary>
   <div class="content">
     <p class="damage-summary">
-      <!-- EDIT ME -->
       Garage door has damage to two panels. Rather than replacing the entire door, the two damaged panels will be replaced. An estimate has been received; panel replacement is pending.
     </p>
     <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
@@ -109,7 +107,6 @@
   <summary>3) Wall &amp; Flooring Damage</summary>
   <div class="content">
     <p class="damage-summary">
-      <!-- EDIT ME -->
       Kitchen hardwood flooring shows several areas of damage beyond normal use and normal wear and tear. Walls and several corners show damaged and broken sections beyond normal use and normal wear and tear. Patching, painting, and repair will be needed. Job pending.
     </p>
     <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
@@ -122,15 +119,24 @@
   <summary>4) Damages on Several Doors</summary>
   <div class="content">
     <p class="damage-summary">
-      <!-- EDIT ME -->
-      Basement door frame was forcibly broken. The force used to break the door lock (since replaced) also split the door frame vertically from top to bottom; the entire frame will likely need to be replaced.<br>The basement door leading to the garage has paint damage beyond normal use and will need repainting.<br>The first-floor restroom door has a hole in it and will need to be repaired.
+      Basement door frame was forcibly broken. The force used to break the door lock (since replaced) also split the door frame vertically from top to bottom; the entire frame will likely need to be replaced.
+    </p>
+    <p class="damage-summary">
+      The basement door leading to the garage has paint damage beyond normal use and will need repainting.
+    </p>
+    <p class="damage-summary">
+      The first-floor restroom door has a hole in it and will need to be repaired.
+    </p>
+    <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
+    <div class="gallery" data-role="gallery"><span class="status-text">Loading photos&hellip;</span></div>
+  </div>
+</details>
 
 <!-- ================= Category 5 ================= -->
 <details data-folder="5) Removal &amp; Cleaning">
   <summary>5) Removal &amp; Cleaning</summary>
   <div class="content">
     <p class="damage-summary">
-      <!-- EDIT ME -->
       Items were left behind in several places, both inside the house and outside in the backyard, requiring removal services. Additional cleaning needed includes carpet cleaning, bathroom deep cleaning, and kitchen deep cleaning.
     </p>
     <p class="invoice status-text" data-role="invoice">Loading invoice/receipt&hellip;</p>
@@ -139,15 +145,15 @@
 </details>
 
 <footer>
-  Updated September 27, 2026.
+  Updated on September 27, 2026.
 </footer>
 
 <script>
 // ======================= EDIT THESE THREE LINES =======================
 const CONFIG = {
-  owner: "sibulut",
-  repo:  "sombersby",
-  branch: "main"
+  owner: "YOUR-GITHUB-USERNAME",   // e.g. "sadikb"
+  repo:  "YOUR-REPO-NAME",         // e.g. "rental-damage-photos"
+  branch: "main"                   // change to "master" if that's your repo's default branch
 };
 // =======================================================================
 
@@ -161,81 +167,107 @@ window.addEventListener("pageshow", function (event) {
   }
 });
 
-function apiUrlForFolder(folder) {
-  const encodedPath = folder.split("/").map(encodeURIComponent).join("/");
+// One request per page load (git tree, recursive) instead of one request per
+// category — this is what GitHub's anonymous API rate limit (60/hour/IP) counts
+// against, so fewer calls means far less chance of ever hitting that limit.
+function treeUrl() {
   return "https://api.github.com/repos/" + CONFIG.owner + "/" + CONFIG.repo +
-         "/contents/" + encodedPath + "?ref=" + encodeURIComponent(CONFIG.branch) +
-         "&_=" + Date.now();
+         "/git/trees/" + encodeURIComponent(CONFIG.branch) +
+         "?recursive=1&_=" + Date.now();
 }
 
-async function loadFolder(section) {
+function rawUrlFor(path) {
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  return "https://raw.githubusercontent.com/" + CONFIG.owner + "/" + CONFIG.repo +
+         "/" + encodeURIComponent(CONFIG.branch) + "/" + encodedPath;
+}
+
+function showErrorOnAll(sections, status) {
+  let msg = "Could not load photos (HTTP " + status + ").";
+  if (status === 403) msg += " GitHub's public API rate limit (60 requests/hour per visitor) may have been reached — try again in a bit.";
+  if (status === 404) msg += " Check CONFIG.owner/repo/branch at the bottom of this file are correct and the repo is public.";
+  sections.forEach(function (section) {
+    section.querySelector('[data-role="gallery"]').innerHTML = '<span class="error-text">' + msg + "</span>";
+    section.querySelector('[data-role="invoice"]').textContent = "Invoice/receipt: unavailable.";
+  });
+}
+
+function populateSection(section, tree) {
   const folder = section.getAttribute("data-folder");
   const galleryEl = section.querySelector('[data-role="gallery"]');
   const invoiceEl = section.querySelector('[data-role="invoice"]');
+  const prefix = folder + "/";
 
-  try {
-    const res = await fetch(apiUrlForFolder(folder), { cache: "no-store" });
+  // Only files directly inside this folder (not in a deeper subfolder)
+  const filesHere = tree.filter(function (item) {
+    return item.type === "blob" &&
+      item.path.indexOf(prefix) === 0 &&
+      item.path.slice(prefix.length).indexOf("/") === -1;
+  });
 
-    if (!res.ok) {
-      let msg = "Could not load this folder (HTTP " + res.status + ").";
-      if (res.status === 403) msg += " GitHub's public API rate limit may have been reached — try again in a few minutes.";
-      if (res.status === 404) msg += " Check that the folder name and CONFIG.owner/repo/branch at the bottom of this file are correct.";
-      galleryEl.innerHTML = '<span class="error-text">' + msg + "</span>";
-      invoiceEl.textContent = "Invoice/receipt: unavailable.";
-      return;
-    }
+  const images = filesHere
+    .filter(function (f) { return IMAGE_EXT.test(f.path); })
+    .sort(function (a, b) { return a.path.localeCompare(b.path, undefined, { numeric: true }); });
 
-    const items = await res.json();
-    if (!Array.isArray(items)) {
-      galleryEl.innerHTML = '<span class="error-text">Unexpected response for this folder.</span>';
-      return;
-    }
+  const pdfs = filesHere
+    .filter(function (f) { return PDF_EXT.test(f.path); })
+    .sort(function (a, b) { return a.path.localeCompare(b.path, undefined, { numeric: true }); });
 
-    const images = items
-      .filter(function (f) { return f.type === "file" && IMAGE_EXT.test(f.name); })
-      .sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); });
+  // Photo gallery
+  if (images.length === 0) {
+    galleryEl.innerHTML = '<span class="status-text">No photos in this folder yet.</span>';
+  } else {
+    galleryEl.innerHTML = "";
+    images.forEach(function (img) {
+      const name = img.path.slice(prefix.length);
+      const url = rawUrlFor(img.path) + "?v=" + Date.now();
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      const el = document.createElement("img");
+      el.src = url;
+      el.alt = name;
+      el.loading = "lazy";
+      a.appendChild(el);
+      galleryEl.appendChild(a);
+    });
+  }
 
-    const pdfs = items
-      .filter(function (f) { return f.type === "file" && PDF_EXT.test(f.name); })
-      .sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); });
-
-    // Photo gallery
-    if (images.length === 0) {
-      galleryEl.innerHTML = '<span class="status-text">No photos in this folder yet.</span>';
-    } else {
-      galleryEl.innerHTML = "";
-      images.forEach(function (img) {
-        const bust = (img.download_url.indexOf("?") === -1 ? "?" : "&") + "v=" + Date.now();
-        const a = document.createElement("a");
-        a.href = img.download_url + bust;
-        a.target = "_blank";
-        a.rel = "noopener";
-        const el = document.createElement("img");
-        el.src = img.download_url + bust;
-        el.alt = img.name;
-        el.loading = "lazy";
-        a.appendChild(el);
-        galleryEl.appendChild(a);
-      });
-    }
-
-    // Invoice / receipt placeholder
-    if (pdfs.length === 0) {
-      invoiceEl.textContent = "Invoice/receipt: not yet added.";
-    } else {
-      invoiceEl.innerHTML = "Invoice/receipt: " + pdfs.map(function (p) {
-        return '<a href="' + p.download_url + '" target="_blank" rel="noopener">' + p.name + "</a>";
-      }).join(", ");
-    }
-  } catch (err) {
-    galleryEl.innerHTML = '<span class="error-text">Could not load photos (network error).</span>';
-    invoiceEl.textContent = "Invoice/receipt: unavailable.";
+  // Invoice / receipt placeholder
+  if (pdfs.length === 0) {
+    invoiceEl.textContent = "Invoice/receipt: not yet added.";
+  } else {
+    invoiceEl.innerHTML = "Invoice/receipt: " + pdfs.map(function (p) {
+      const name = p.path.slice(prefix.length);
+      return '<a href="' + rawUrlFor(p.path) + '" target="_blank" rel="noopener">' + name + "</a>";
+    }).join(", ");
   }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll("details[data-folder]").forEach(loadFolder);
-});
+async function loadAll() {
+  const sections = Array.from(document.querySelectorAll("details[data-folder]"));
+  try {
+    const res = await fetch(treeUrl(), { cache: "no-store" });
+    if (!res.ok) {
+      showErrorOnAll(sections, res.status);
+      return;
+    }
+    const data = await res.json();
+    if (!data || !Array.isArray(data.tree)) {
+      showErrorOnAll(sections, "unexpected response");
+      return;
+    }
+    sections.forEach(function (section) { populateSection(section, data.tree); });
+  } catch (err) {
+    sections.forEach(function (section) {
+      section.querySelector('[data-role="gallery"]').innerHTML = '<span class="error-text">Could not load photos (network error).</span>';
+      section.querySelector('[data-role="invoice"]').textContent = "Invoice/receipt: unavailable.";
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadAll);
 </script>
 
 </body>
